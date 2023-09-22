@@ -29,6 +29,16 @@ describe('HTML', () => {
     initializeEditorState: () => void;
   }>;
 
+  beforeEach(() => {
+    documentSpy = jest.spyOn(globalThis, 'document', 'get');
+  });
+
+  let documentSpy: jest.SpyInstance;
+
+  afterEach(() => {
+    documentSpy.mockRestore();
+  });
+
   const HTML_SERIALIZE: Input = [
     {
       html: '<p><br></p>',
@@ -60,6 +70,80 @@ describe('HTML', () => {
       ).toBe(html);
     });
   }
+
+  test(`[Lexical -> HTML]: $generateHtmlFromNodes should throw if document is not present or passed`, () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $getRoot().append($createParagraphNode());
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    documentSpy.mockImplementation(() => undefined);
+    expect(document).toBeUndefined();
+
+    editor.getEditorState().read(() => {
+      expect(() => $generateHtmlFromNodes(editor)).toThrow(
+        'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom and pass the document as an argument.',
+      );
+    });
+  });
+
+  test(`[Lexical -> HTML]: $generateHtmlFromNodes works if passed a document as an argument`, async () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    editor.update(
+      () => {
+        $getRoot().append($createParagraphNode());
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
+    const {TextEncoder, TextDecoder} = await import('util');
+    Object.assign(global, {TextDecoder, TextEncoder});
+    // jest.spyOn(globalThis, 'TextEncoder', 'get').mockImplementation(() => TextEncoder)
+
+    const {JSDOM} = await import('jsdom');
+
+    const jsdom = new JSDOM();
+
+    documentSpy.mockImplementation(() => undefined);
+    expect(document).toBeUndefined();
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() =>
+          $generateHtmlFromNodes(editor, null, jsdom.window.document),
+        ),
+    ).toBe('<p><br></p>');
+  });
 
   test(`[Lexical -> HTML]: Use provided selection`, () => {
     const editor = createHeadlessEditor({

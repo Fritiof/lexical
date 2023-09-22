@@ -42,7 +42,7 @@ export class ParagraphNode extends ElementNode {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('p');
+    const dom = (document || globalThis.document).createElement('p');
     const classNames = getCachedClassNameArray(config.theme, 'paragraph');
     if (classNames !== undefined) {
       const domClassList = dom.classList;

@@ -52,15 +52,19 @@ export function $generateNodesFromDOM(
 export function $generateHtmlFromNodes(
   editor: LexicalEditor,
   selection?: RangeSelection | NodeSelection | GridSelection | null,
-  dom?: Document,
+  dom: Document = document,
 ): string {
-  if (typeof document === 'undefined' && !dom) {
+  if (typeof dom === 'undefined') {
     throw new Error(
-      'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom and pass the document as the third argument.',
+      'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom and pass the document as an argument.',
     );
   }
 
-  const container = (dom ?? document).createElement('div');
+  if (typeof document === 'undefined' && dom) {
+    // globalThis.document = dom
+  }
+
+  const container = dom.createElement('div');
   const root = $getRoot();
   const topLevelChildren = root.getChildren();
 
